@@ -14,7 +14,7 @@ class PrefixMapper:
         alphabetical prefixes (lowercase, where the second character is also lowercase).
         """
         # Load the dataset
-        dataset = load_dataset("wikitext", 'wikitext-2-v1', split="train")
+        dataset = load_dataset("ag_news", split="train")
         
         # Iterate over each text entry in the dataset
         for raw_text_iter in dataset['text']:
