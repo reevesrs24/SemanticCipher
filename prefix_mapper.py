@@ -1,8 +1,12 @@
+import nltk
 import random
 
 from collections import defaultdict
 from typing import List, Tuple
 from datasets import load_dataset
+from nltk.corpus import words
+
+nltk.download('words')
 
 class PrefixMapper:
     def __init__(self) -> None:
@@ -15,6 +19,10 @@ class PrefixMapper:
         self._map_prefixes_to_ascii(key)
         return self.ascii_map
 
+    def _is_real_word(self, word):
+        # Check if the word is in the nltk words corpus
+        return word.lower() in words.words()
+
     def _map_prefixes_to_ascii(self, key: str) -> None:
         random.seed(key)
         random.shuffle(self.prefix_list)
@@ -22,7 +30,7 @@ class PrefixMapper:
         self.ascii_map = {x:prefix for x, prefix in zip(range(0, 256), self.prefix_list)}
         
     def _generate_prefix_map(self) -> None:
-        dataset = load_dataset("ag_news", split="train")
+        dataset = load_dataset("ag_news", split="train", trust_remote_code=True)
         
         prefix_map: defaultdict[str, int] = defaultdict(int)
 
@@ -33,7 +41,7 @@ class PrefixMapper:
 
             for word in words:
                 # Check if the first character is alphabetical
-                if word[0].isalpha():
+                if self._is_real_word(word) and word[0].isalpha():
                     # Increment count for 1-character prefix
                     # prefix_map[word[:1]] += 1
                     # If the word has a second lowercase alphabetical character, increment for 2-character prefix
