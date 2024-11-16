@@ -18,7 +18,7 @@ load_dotenv()
 
 
 class SemanticCipher:
-    def __init__(self, model_name: str = "gpt-4o", from_pretrained: bool = False) -> None:
+    def __init__(self, model_name: str = "gpt-4o", from_pretrained: bool = False, key: str="") -> None:
         """
         Initialize the object with model settings, configurations, and relevant attributes.
         
@@ -57,11 +57,14 @@ class SemanticCipher:
             'C': 'U', 'D': 'M', 'E': 'W', 'F': 'F'
         }
 
+        # Derive the hex map using the provided key (affects character-to-hex mapping)
+        self._set_hex_map_derivation(key)
+
         # Load the API key from environment variable
         self.api_key = os.getenv("OPENAI_API_KEY")
 
         # Set retry settings and chunk processing length
-        self.max_retries = 5
+        self.max_retries = 10
         self.chunk_length = 10
 
         # Flag to indicate if the model should be loaded from a pretrained version
@@ -139,7 +142,7 @@ class SemanticCipher:
         return next_word.strip()
 
 
-    def _encode_from_pretrained(self, plaintext: str) -> str:
+    def _encrypt_from_pretrained(self, plaintext: str) -> str:
         """
         Encodes a given plaintext string using a predefined mapping.
         
@@ -149,10 +152,10 @@ class SemanticCipher:
         the corresponding next word is appended to the ciphertext.
 
         Args:
-            plaintext (str): The plaintext string to encode.
+            plaintext (str): The plaintext string to encrypted.
         
         Returns:
-            str: The resulting encoded ciphertext as a space-separated string of words.
+            str: The resulting encrypted ciphertext as a space-separated string of words.
         """
         
         # Step 1: Convert the plaintext into a hexadecimal string.
@@ -287,11 +290,11 @@ class SemanticCipher:
             bool: True if the decoded cipher chunk matches the original chunk; False otherwise.
         """
         # Decode the ciphertext chunk back into its original string and compare it with the original chunk.
-        decoded_cipher_chunk = self.decode(cipher_chunk)
-        decoded_chunk= self._hex_to_string(chunk)
+        decrypted_cipher_chunk = self.decrypt(cipher_chunk)
+        chunk_str = self._hex_to_string(chunk)
         
         # Return True if both decoded values match, otherwise return False.
-        return False if decoded_cipher_chunk != decoded_chunk else True
+        return False if decrypted_cipher_chunk != chunk_str else True
 
 
     def _set_hex_map_derivation(self, key: str):
@@ -316,9 +319,9 @@ class SemanticCipher:
         self.hex_map = {f'{i:x}'.upper(): items[i] for i in range(16)}
 
 
-    def encode_from_api(self, plaintext: str, context: str = "") -> str:
+    def encrypt_from_api(self, plaintext: str, context: str = "") -> str:
         """
-        Encodes the given plaintext into a semantically valid ciphertext using a language model.
+        Encrypts the given plaintext into a semantically valid ciphertext using a language model.
         
         The function converts the plaintext into hexadecimal format, splits it into chunks,
         then queries a language model for each chunk to generate a corresponding ciphertext. 
@@ -364,9 +367,9 @@ class SemanticCipher:
         # Join and return the final ciphertext as a string of space-separated chunks.
         return " ".join(ciphertext_chunks)
     
-    def encode(self, plaintext: str, context: str = "", key: str = "") -> str:
+    def encrypt(self, plaintext: str, context: str = "") -> str:
         """
-        Encodes a plaintext string using a specified key and context, with different methods
+        Encrypts a plaintext string using a specified key and context, with different methods
         depending on whether the model is pretrained or not.
 
         The method first derives the hex map based on the provided key, and then it either
@@ -375,27 +378,23 @@ class SemanticCipher:
         Args:
             plaintext (str): The plaintext string to be encoded.
             context (str, optional): The context to provide when encoding, if applicable (default is "").
-            key (str, optional): A key used for mapping characters to hexadecimal values (default is "").
 
         Returns:
             str: The resulting encoded string, either from a pretrained model or via an API.
         """
-        
-        # Derive the hex map using the provided key (affects character-to-hex mapping)
-        self._set_hex_map_derivation(key)
-
+    
         # Choose encoding method based on whether the model is pretrained or not
         if self.from_pretrained:
             # Use the pretrained model to encode the plaintext
-            return self._encode_from_pretrained(plaintext)
+            return self._encrypt_from_pretrained(plaintext)
         else:
             # Use the API to encode the plaintext with the given context
-            return self.encode_from_api(plaintext, context)
+            return self.encrypt_from_api(plaintext, context)
 
 
-    def decode(self, ciphertext: str) -> str:
+    def decrypt(self, ciphertext: str) -> str:
         """
-        Decodes the given ciphertext back into the original plaintext.
+        Decrypts the given ciphertext back into the original plaintext.
 
         The function splits the ciphertext into words, maps each word back to its corresponding
         hex character using a reverse hex map, and then converts the resulting hex string
@@ -407,6 +406,7 @@ class SemanticCipher:
         Returns:
             str: The decoded plaintext, derived from the ciphertext.
         """
+
         # Create a reverse mapping of the hex map for decoding.
         hex_map_reverse = {v: k for k, v in self.hex_map.items()}
         
@@ -420,10 +420,12 @@ class SemanticCipher:
 
 
 def main():    
-    sc = SemanticCipher(model_name="Qwen/Qwen2.5-1.5B-Instruct", from_pretrained=True)
-    ciphertext = sc.encode("0xdeadbeef 123!@#", context="Space", key="xyz")
-    logging.info(f"Ciphertxt: {ciphertext}")
-    plaintext = sc.decode(ciphertext)
+    sc = SemanticCipher(key="xyz")
+
+    ciphertext = sc.encrypt("0xdeadbeef", context="Space")
+    logging.info(f"Ciphertext: {ciphertext}")
+
+    plaintext = sc.decrypt(ciphertext=ciphertext)
     logging.info(f"Plaintext: {plaintext}")
 
 
