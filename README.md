@@ -3,7 +3,7 @@
 # Semantic Cipher
 Encrypt arbitrary data into semantic text
 
-## Encrypt using OpenAI GPT-4o
+## Encrypt using OpenAI Models
 
 To use OpenAI models, simply add your OpenAI API key to the `.env` file.
 
