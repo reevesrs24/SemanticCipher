@@ -30,7 +30,8 @@ Plaintext: 0xdeadbeef
 
 ## Encode using pretrained SLM
 
-**Note**: Using SLMs typically output text that is erroneous and/or illogical. Next token prediction is strictly used and does not leverage the reasoning capabilities of larger models to formulate outputs.  Added as an experiment and as a template for future experiments.
+> [!IMPORTANT]  
+> - Using SLMs typically output text that is erroneous and/or illogical. Next token prediction is strictly used and does not leverage the reasoning capabilities of larger models to formulate outputs.  Added as an experiment and as a template for future experiments.
 
 ```python
 sc = SemanticCipher(model_name="Qwen/Qwen2.5-1.5B-Instruct", from_pretrained=True)
@@ -45,3 +46,7 @@ Output:
 Ciphertext: Lily E. Duffin F. A. W. A. C. A. U. A. W. A. T. A. C. A. C. A. A.
 Plaintext: 0xdeadbeef
 ```
+
+> [!TIP]  
+> - Use `requirements.txt` to install all necessary packages
+> - Python version `3.10.15` was use in testing
