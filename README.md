@@ -27,6 +27,7 @@ print(f"Plaintext: {plaintext}")
 Output:
 ```bash
 Ciphertext: Launching every day, fearless astronauts will always conquer all universe. Astronauts wearing advanced technology aboard craft achieve cosmic adventures always
+
 Plaintext: 0xdeadbeef
 ```
 
@@ -48,6 +49,7 @@ print(f"Plaintext: {plaintext}")
 Output:
 ```bash
 Ciphertext: Lily E. Duffin F. A. W. A. C. A. U. A. W. A. T. A. C. A. C. A. A.
+
 Plaintext: 0xdeadbeef
 ```
 
