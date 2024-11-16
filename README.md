@@ -1,3 +1,5 @@
+<div align="center"><img src="assets/semantic_cipher.jpeg" width="350"/></div>
+  
 # SemanticCipher
 Encrypt arbitrary data into semantic text
 
@@ -24,7 +26,7 @@ plaintext = sc.decrypt(ciphertext=ciphertext)
 print(f"Plaintext: {plaintext}")
 ```
 
-Output:
+### Output:
 ```bash
 Ciphertext: Launching every day, fearless astronauts will always conquer all universe. Astronauts wearing advanced technology aboard craft achieve cosmic adventures always
 
@@ -46,7 +48,7 @@ plaintext = sc.decrypt(ciphertext=ciphertext)
 print(f"Plaintext: {plaintext}")
 ```
 
-Output:
+### Output:
 ```bash
 Ciphertext: Lily E. Duffin F. A. W. A. C. A. U. A. W. A. T. A. C. A. C. A. A.
 
