@@ -1,6 +1,6 @@
 <div align="center"><img src="assets/semantic_cipher.jpeg" width="350"/></div>
   
-# SemanticCipher
+# Semantic Cipher
 Encrypt arbitrary data into semantic text
 
 ## Encode using OpenAI GPT-4o
