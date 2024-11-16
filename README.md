@@ -3,7 +3,7 @@
 # Semantic Cipher
 Encrypt arbitrary data into semantic text
 
-## Encrypt using OpenAI Models
+## Encrypt Using OpenAI Models
 
 To use OpenAI models, simply add your OpenAI API key to the `.env` file.
 
@@ -33,7 +33,7 @@ Ciphertext: Launching every day, fearless astronauts will always conquer all uni
 Plaintext: 0xdeadbeef
 ```
 
-## Encrypt using pretrained SLM
+## Encrypt Using Pretrained SLM
 
 > [!IMPORTANT]  
 > - Using SLMs typically output text that is nonsensical. Next token prediction is strictly used and does not leverage the reasoning capabilities of larger models to formulate outputs.  Added as an experiment and as a template for future experiments.
