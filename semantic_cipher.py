@@ -1,12 +1,15 @@
 import os
 import json
 import torch
+import logging
 import numpy as np
 
 from typing import List, Tuple
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from openai import OpenAI
 from dotenv import load_dotenv
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv()
 
@@ -113,8 +116,6 @@ class SemanticCipher:
         inputs = self.tokenizer([input_str], return_tensors="pt")
         input_ids = inputs.input_ids
 
-        print(input_str)
-
         while True:
             with torch.no_grad():
                 outputs = self.model(input_ids=input_ids)
@@ -143,12 +144,12 @@ class SemanticCipher:
         # Split hex text into pairs of two characters, convert to char, and join them
         return ''.join(chr(int(hex_text[i:i+2], 16)) for i in range(0, len(hex_text), 2))
 
-    def _checksum(self, cipher_chunk, chunk):
+    def _is_valid_checksum(self, cipher_chunk, chunk):
         decoded_cipher_chunk = self.decode(cipher_chunk)
         decoded_cipher_chunk_2 = self._hex_to_string(chunk)
         return False if decoded_cipher_chunk != decoded_cipher_chunk_2 else True
 
-    def encode(self, plaintext: str, key: str = "") -> str:
+    def encode(self, plaintext: str, context: str="", key: str = "") -> str:
         ciphertext = ""
         encoded_plaintext = self._string_to_hex(plaintext)
 
@@ -157,21 +158,23 @@ class SemanticCipher:
         for chunk in chunks:
             encoded_str = [self.hex_map[ch.upper()] for ch in chunk]
             # print(encoded_str)
-            text = self._query_llm(encoded_str, "space")
+            text = self._query_llm(encoded_str, context)
             count = 0
-            while not self._checksum(text, chunk) and count < 10:
-                print("no match")
-                text = self._query_llm(encoded_str, "space")
+            while not self._is_valid_checksum(text, chunk):
+                text = self._query_llm(encoded_str, context)
                 count += 1
-            print()
-            ciphertext += text + ". "
+
+                if count == 5:
+                    logging.error(f"Unable to find semantic chunk for: {chunk}")
+                    exit(1)
+
+            ciphertext += text + " "
 
         return ciphertext
 
 
     def decode(self, ciphertext: str) -> str:
         hex_map_reverse = {val: key for key, val in self.hex_map.items()}
-        print(ciphertext.split(' '))
         return self._hex_to_string("".join(
             hex_map_reverse[word[0].upper()] for word in ciphertext.split(' ') if word != ''
         ))
@@ -179,10 +182,10 @@ class SemanticCipher:
 
 def main():    
     sc = SemanticCipher()
-    ciphertext = sc.encode("Analis Reeves", key="")
-    print(ciphertext)
+    ciphertext = sc.encode("All in all is all we are", context="Space", key="")
+    logging.info(f"Ciphertxt: {ciphertext}")
     plaintext = sc.decode(ciphertext)
-    print(plaintext)
+    logging.info(f"Plaintext: {plaintext}")
 
 
 if __name__ == '__main__':
