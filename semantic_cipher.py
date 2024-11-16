@@ -1,188 +1,427 @@
+# Standard library imports
 import os
 import json
-import torch
+import random
 import logging
-import numpy as np
 
-from typing import List, Tuple
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from openai import OpenAI
+# Third-party library imports
+import torch
 from dotenv import load_dotenv
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from openai import OpenAI
 
+# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Load environment variables from a .env file
 load_dotenv()
 
+
 class SemanticCipher:
-    def __init__(self, model_name: str="meta-llama/Llama-3.2-1B") -> None:
+    def __init__(self, model_name: str = "gpt-4o", from_pretrained: bool = False) -> None:
+        """
+        Initialize the object with model settings, configurations, and relevant attributes.
+        
+        This constructor sets up the model, tokenizer, API key, retry settings, and other configurations
+        needed for the model's operation. The model can either be loaded from a pretrained version or
+        be initialized for future use.
+
+        Args:
+            model_name (str): The name of the model to be used. Defaults to "gpt-4o". This name can
+                            refer to a specific model (e.g., GPT-4 variant) and is used for both 
+                            model and tokenizer loading.
+            from_pretrained (bool): Flag to indicate whether to load the model from a pretrained version
+                                    (default is `False`). If `True`, the model and tokenizer will be loaded 
+                                    using the `AutoModelForCausalLM` and `AutoTokenizer` classes.
+        
+        Attributes:
+            model_name (str): The name of the model that is used in API calls and loading pretrained models.
+            hex_map (dict): A dictionary mapping hexadecimal characters (0-9, A-F) to corresponding letters.
+                            This mapping may be used for encoding or decoding purposes.
+            api_key (str): The API key to access the OpenAI API, retrieved from the environment variable 
+                        `OPENAI_API_KEY`. This key is used for making API calls.
+            max_retries (int): The maximum number of retry attempts for API calls in case of failure.
+            chunk_length (int): The length of chunks to be used when splitting data or processing requests.
+            model (transformers.PreTrainedModel, optional): The model object loaded from the pretrained model,
+                                                        if `from_pretrained` is `True`.
+            tokenizer (transformers.PreTrainedTokenizer, optional): The tokenizer object loaded from the
+                                                                    pretrained model, if `from_pretrained` is `True`.
+        """
+        # Initialize basic model settings
         self.model_name = model_name
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            torch_dtype="auto",
-            device_map="cpu"
-        )
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+
+        # Hexadecimal-to-letter mapping, useful for encoding/decoding operations
         self.hex_map = {
-                        '0': 'E',
-                        '1': 'T',
-                        '2': 'A',
-                        '3': 'O',
-                        '4': 'I',
-                        '5': 'N',
-                        '6': 'S',
-                        '7': 'H',
-                        '8': 'R',
-                        '9': 'D',
-                        'A': 'L',
-                        'B': 'C',
-                        'C': 'U',
-                        'D': 'M',
-                        'E': 'W',
-                        'F': 'F'
-                    }
-        self.llm_model = 'gpt-4o'
+            '0': 'E', '1': 'T', '2': 'A', '3': 'O', '4': 'I', '5': 'N',
+            '6': 'S', '7': 'H', '8': 'R', '9': 'D', 'A': 'L', 'B': 'C',
+            'C': 'U', 'D': 'M', 'E': 'W', 'F': 'F'
+        }
+
+        # Load the API key from environment variable
         self.api_key = os.getenv("OPENAI_API_KEY")
 
-    def _query_llm(self, encoded_str: str, context: str=""):
-        client = OpenAI(api_key=self.api_key)
+        # Set retry settings and chunk processing length
+        self.max_retries = 5
+        self.chunk_length = 10
 
-        prompt = f"""
-                Task: Generate a sentence where each word begins with the corresponding character in the provided list of characters. The sentence must be logical, semantically correct, and follow these constraints:
+        # Flag to indicate if the model should be loaded from a pretrained version
+        self.from_pretrained = from_pretrained
 
-                1. Each word must begin with the corresponding character in the list, in order.
-                2. The output must contain a word for every character in the list, with no omissions or extra words. 
+        # Device selection based on availability of GPU
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-                Input format: A string of characters, e.g., `"abcd"`.  
-                Output format: A sentence where each word starts with the corresponding character, e.g., `"Always before continuing downward"`.
-
-                Example 1:  
-                - Input: `"abcdefg"`  
-                - Output: `"Always before continuing downward, expect failing guardrails"`
-
-                Example 2:  
-                - Input: `"ruendbg"`  
-                - Output: `"Running under everything now, beyond glad"`  
-
-                Now, using the above guidelines, process the input and generate the output.
-                
-                
-            """
-        if context != "":
-            prompt += f"The context of the sentence should be {context}."
-
-        prompt += f"Use these following characters to construct the output: {encoded_str}"
-
-        prompt += """
-                Return the response in JSON format.
-                Use the follwing format:
-                {
-                    "text": <generated_output>
-                }
-            """
-
-        content = [
-            {
-                "type": "text",
-                "text": prompt,
-            },
-        ]
+        # Load the pretrained model and tokenizer if specified
+        if self.from_pretrained:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype="auto",
+                device_map=device
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
 
-        completion = client.chat.completions.create(
-            model=self.llm_model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": content
-                }
-            ],
-            response_format={"type": "json_object"}
-        )
+    
+    def _get_next_word(self, token_prefix: str, cipher_text: str) -> str:
+        """
+        Generates the next word in the ciphertext based on the provided token prefix 
+        and the current cipher_text, using a pretrained model to predict the next token.
 
-        output = completion.choices[0].message.content
-        output = json.loads(output)
-        return output.get('text', '')
+        Args:
+            token_prefix (str): The token to append to the current cipher_text.
+            cipher_text (str): The current ciphertext that will be used as context.
 
-    def _get_next_word(self, token_bigram: str, cipher_text: str) -> str:
-
+        Returns:
+            str: The next word generated by the model, which is a combination of 
+                the current cipher_text and the newly predicted word.
+        """
+        
+        # Step 1: Set up the initial input string based on cipher_text.
         if cipher_text == '':
-            input_str = token_bigram.capitalize()
+            # If no cipher_text exists, use the token_prefix as the initial word
+            input_str = token_prefix.capitalize()
             next_word = input_str
         else:
-            input_str = f"{cipher_text}{token_bigram.lower()}"
-            next_word = token_bigram.lower()
+            # If cipher_text exists, concatenate it with the token_prefix
+            input_str = f"{cipher_text} {token_prefix}"
+            next_word = token_prefix
 
-        # Encode the input bigram and generate output
+        # Step 2: Tokenize the input string for the model
         inputs = self.tokenizer([input_str], return_tensors="pt")
         input_ids = inputs.input_ids
 
+        # Step 3: Generate the next token iteratively
         while True:
+            # Step 3.1: Perform inference to get model outputs
             with torch.no_grad():
                 outputs = self.model(input_ids=input_ids)
 
-            # Get the next token
+            # Step 3.2: Get the logits for the next token
             next_token_logits = outputs.logits[0, -1, :]
             next_token_id = torch.argmax(next_token_logits).item()
             next_char = self.tokenizer.decode([next_token_id])
 
-            # Append character to the result
+            # Step 3.3: Append the generated token (next_char) to the next word
+            next_word += next_char
             input_ids = torch.cat([input_ids, torch.tensor([[next_token_id]])], dim=1)
 
-            if next_char[0] == " ":
-                next_word = next_word.split(' ')[0].replace('\n', '')
+            # Step 3.4: Break when a space is encountered in the generated token
+            if " " in next_char:
+                # Remove any additional tokens after the first word
+                next_word = next_word.split(' ')[0]
                 break
-            
-            next_word += next_char
+            # Step 3.5: Break when a newline character is encountered in the generated token
+            elif "\\n" in next_char:
+                # Remove any additional tokens after the first word
+                next_word = next_word.split('\\n')[0]
+                break
 
+        # Step 4: Return the generated word, stripped of any leading/trailing spaces
         return next_word.strip()
 
-    def _string_to_hex(self, text: str):
-        # Convert each character to hexadecimal and join them
-        return ''.join(format(ord(char), '02x') for char in text)
-    
-    def _hex_to_string(self, hex_text: str):
-        # Split hex text into pairs of two characters, convert to char, and join them
-        return ''.join(chr(int(hex_text[i:i+2], 16)) for i in range(0, len(hex_text), 2))
 
-    def _is_valid_checksum(self, cipher_chunk, chunk):
-        decoded_cipher_chunk = self.decode(cipher_chunk)
-        decoded_cipher_chunk_2 = self._hex_to_string(chunk)
-        return False if decoded_cipher_chunk != decoded_cipher_chunk_2 else True
+    def _encode_from_pretrained(self, plaintext: str) -> str:
+        """
+        Encodes a given plaintext string using a predefined mapping.
+        
+        Converts the input plaintext into a hexadecimal representation, 
+        and then processes each character in the hexadecimal string by 
+        looking it up in a predefined map (hex_map). For each character, 
+        the corresponding next word is appended to the ciphertext.
 
-    def encode(self, plaintext: str, context: str="", key: str = "") -> str:
-        ciphertext = ""
+        Args:
+            plaintext (str): The plaintext string to encode.
+        
+        Returns:
+            str: The resulting encoded ciphertext as a space-separated string of words.
+        """
+        
+        # Step 1: Convert the plaintext into a hexadecimal string.
         encoded_plaintext = self._string_to_hex(plaintext)
 
-        chunks = [encoded_plaintext[i:i+10] for i in range(0, len(encoded_plaintext), 10)]
+        # Step 2: Initialize an empty string to hold the final ciphertext.
+        ciphertext = ""
+        
+        # Step 3: Build the ciphertext by processing each character in the encoded string.
+        for ch in encoded_plaintext:
+            # Look up the next word using the hex_map and append to the ciphertext
+            ciphertext += self._get_next_word(self.hex_map[ch.upper()], ciphertext) + " "
 
+        # Step 4: Return the final ciphertext with all parts concatenated.
+        return ciphertext.strip()  # Remove any trailing spac
+
+        
+
+    def _query_llm(self, encoded_str: str, context: str = ""):
+        """
+        Queries a language model (e.g., OpenAI's GPT) to generate a semantically valid sentence 
+        where each word starts with the corresponding character from the provided list of characters.
+        
+        The generated sentence must adhere to the specified constraints: each word must start with 
+        a corresponding character from the input list, in order, and the output must have the same 
+        number of words as the number of characters in the input string.
+        
+        Args:
+            encoded_str (str): A string where each character will serve as the starting letter 
+                                for each word in the generated sentence.
+            context (str, optional): Additional context to provide to the language model for 
+                                    generating the sentence. Defaults to an empty string.
+        
+        Returns:
+            str: A semantically valid sentence generated by the language model, where each word 
+                starts with the corresponding character from the input string. If no output is 
+                found, returns an empty string.
+        """
+        # Initialize the OpenAI client with the provided API key.
+        client = OpenAI(api_key=self.api_key)
+
+        # Define the prompt that will be given to the language model.
+        prompt = f"""
+        Task: Generate a logical, semantically correct sentence where each word starts with the corresponding character in the provided list of characters. 
+
+        Constraints:
+        1. Each word must start with the corresponding character in the list, in order.
+        2. The output must contain exactly one word for every character in the list, no omissions or extra words.
+
+        Example Input: "abcdefg"
+        Example Output: "Always before continuing downward, expect failing guardrails"
+
+        Example Input: "ruendbg"
+        Example Output: "Running under everything now, done being grounded"
+
+        Input characters: {encoded_str}
+        """
+
+        # If additional context is provided, append it to the prompt.
+        if context:
+            prompt += f"\nThe context of the sentence should be: '{context}'."
+
+        # Add a final instruction to return the output in a structured JSON format.
+        prompt += """
+        Return the response in JSON format:
+        {
+            "text": <generated_output>
+        }
+        """
+
+        # Query the OpenAI language model to generate the response based on the prompt.
+        completion = client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+
+        # Parse the response to extract the generated text.
+        output = json.loads(completion.choices[0].message.content)
+        
+        # Return the generated sentence if available, or an empty string if no valid response is found.
+        return output.get('text', '')
+
+
+    def _string_to_hex(self, text: str):
+        """
+        Converts a string of text into its hexadecimal representation.
+        
+        This function iterates over each character in the provided string, converts 
+        each character to its ASCII value, and formats it as a two-character hexadecimal string.
+        
+        Args:
+            text (str): The input string to be converted into hexadecimal.
+            
+        Returns:
+            str: The hexadecimal representation of the input string.
+        """
+        # For each character in the input text, convert it to its ASCII value (ord()) and format as a two-character hex.
+        return ''.join(format(ord(char), '02x') for char in text)
+
+
+    def _hex_to_string(self, hex_text: str):
+        """
+        Converts a string of hexadecimal values back into the original text.
+        
+        This function splits the input hexadecimal string into chunks of two characters each,
+        converts each chunk from hexadecimal back to its ASCII value, and then to the corresponding character.
+        
+        Args:
+            hex_text (str): The input string consisting of hexadecimal characters.
+            
+        Returns:
+            str: The decoded string represented by the hexadecimal input.
+        """
+        # For every two characters in the hexadecimal input, convert them back to an integer (ASCII value),
+        # and then convert that to the corresponding character (chr()).
+        return ''.join(chr(int(hex_text[i:i+2], 16)) for i in range(0, len(hex_text), 2))
+
+
+    def _is_valid_checksum(self, cipher_chunk, chunk):
+        """
+        Verifies if the decoded ciphertext chunk matches the expected chunk based on checksum validation.
+        
+        This function decodes both the ciphertext chunk and the original chunk (in hex), compares them, 
+        and returns True if they match, indicating that the checksum is valid. Otherwise, it returns False.
+        
+        Args:
+            cipher_chunk (str): The encoded chunk that needs to be validated.
+            chunk (str): The original chunk that was used for encoding.
+            
+        Returns:
+            bool: True if the decoded cipher chunk matches the original chunk; False otherwise.
+        """
+        # Decode the ciphertext chunk back into its original string and compare it with the original chunk.
+        decoded_cipher_chunk = self.decode(cipher_chunk)
+        decoded_chunk= self._hex_to_string(chunk)
+        
+        # Return True if both decoded values match, otherwise return False.
+        return False if decoded_cipher_chunk != decoded_chunk else True
+
+
+    def _set_hex_map_derivation(self, key: str):
+        """
+        Generates a new hex map based on a provided key, ensuring that the hex values are shuffled.
+        
+        This function uses the key to seed the random number generator, then shuffles the list of hex map values 
+        and assigns them back to the hex map. This results in a new hex map that is deterministically derived 
+        from the key.
+        
+        Args:
+            key (str): The key used to seed the random number generator, ensuring a consistent but random mapping.
+        """
+        # Seed the random number generator with the key to ensure consistent randomness.
+        random.seed(key)
+
+        # Convert the hex map's values into a list and shuffle them.
+        items = list(self.hex_map.values())
+        random.shuffle(items)
+
+        # Rebuild the hex map with shuffled values, using hexadecimal characters as the keys.
+        self.hex_map = {f'{i:x}'.upper(): items[i] for i in range(16)}
+
+
+    def encode_from_api(self, plaintext: str, context: str = "") -> str:
+        """
+        Encodes the given plaintext into a semantically valid ciphertext using a language model.
+        
+        The function converts the plaintext into hexadecimal format, splits it into chunks,
+        then queries a language model for each chunk to generate a corresponding ciphertext. 
+        The language model's output is validated with a checksum, and the process is retried 
+        up to a specified number of times if the checksum is invalid.
+
+        Args:
+            plaintext (str): The plaintext string to be encoded.
+            context (str, optional): Additional context to be provided to the language model. Defaults to an empty string.
+            
+        Returns:
+            str: The resulting ciphertext, which is a space-separated string of semantically valid encoded chunks.
+        """
+
+        # Convert the plaintext into a hexadecimal string.
+        encoded_plaintext = self._string_to_hex(plaintext)
+        
+        # Split the hexadecimal string into chunks of a specified length for processing.
+        chunks = [encoded_plaintext[i:i+self.chunk_length] for i in range(0, len(encoded_plaintext), self.chunk_length)]
+        
+        # Prepare a list to store the processed ciphertext chunks.
+        ciphertext_chunks = []
+
+        # Process each chunk of the encoded plaintext.
         for chunk in chunks:
+            # For each chunk, map the characters to their corresponding values in the hex map.
             encoded_str = [self.hex_map[ch.upper()] for ch in chunk]
-            # print(encoded_str)
-            text = self._query_llm(encoded_str, context)
-            count = 0
-            while not self._is_valid_checksum(text, chunk):
-                text = self._query_llm(encoded_str, context)
-                count += 1
+            
+            # Attempt to query the language model to generate a valid ciphertext for the chunk,
+            # retrying up to the maximum number of retries allowed.
+            for _ in range(self.max_retries):
+                text = self._query_llm(encoded_str, context)  # Query the language model with the encoded string and context.
+                
+                # If the returned text has a valid checksum, add it to the list of ciphertext chunks.
+                if self._is_valid_checksum(text, chunk):
+                    ciphertext_chunks.append(text)
+                    break
+            else:
+                # If no valid ciphertext is found after the maximum retries, log an error and exit the program.
+                logging.error(f"Unable to find semantic chunk for: {chunk}")
+                exit(1)
 
-                if count == 5:
-                    logging.error(f"Unable to find semantic chunk for: {chunk}")
-                    exit(1)
+        # Join and return the final ciphertext as a string of space-separated chunks.
+        return " ".join(ciphertext_chunks)
+    
+    def encode(self, plaintext: str, context: str = "", key: str = "") -> str:
+        """
+        Encodes a plaintext string using a specified key and context, with different methods
+        depending on whether the model is pretrained or not.
 
-            ciphertext += text + " "
+        The method first derives the hex map based on the provided key, and then it either
+        encodes the plaintext using a pretrained model or an API, depending on the class's settings.
 
-        return ciphertext
+        Args:
+            plaintext (str): The plaintext string to be encoded.
+            context (str, optional): The context to provide when encoding, if applicable (default is "").
+            key (str, optional): A key used for mapping characters to hexadecimal values (default is "").
+
+        Returns:
+            str: The resulting encoded string, either from a pretrained model or via an API.
+        """
+        
+        # Derive the hex map using the provided key (affects character-to-hex mapping)
+        self._set_hex_map_derivation(key)
+
+        # Choose encoding method based on whether the model is pretrained or not
+        if self.from_pretrained:
+            # Use the pretrained model to encode the plaintext
+            return self._encode_from_pretrained(plaintext)
+        else:
+            # Use the API to encode the plaintext with the given context
+            return self.encode_from_api(plaintext, context)
 
 
     def decode(self, ciphertext: str) -> str:
-        hex_map_reverse = {val: key for key, val in self.hex_map.items()}
-        return self._hex_to_string("".join(
-            hex_map_reverse[word[0].upper()] for word in ciphertext.split(' ') if word != ''
-        ))
+        """
+        Decodes the given ciphertext back into the original plaintext.
+
+        The function splits the ciphertext into words, maps each word back to its corresponding
+        hex character using a reverse hex map, and then converts the resulting hex string
+        back into the original plaintext.
+
+        Args:
+            ciphertext (str): The ciphertext string to be decoded, consisting of space-separated words.
+            
+        Returns:
+            str: The decoded plaintext, derived from the ciphertext.
+        """
+        # Create a reverse mapping of the hex map for decoding.
+        hex_map_reverse = {v: k for k, v in self.hex_map.items()}
+        
+        # Decode the ciphertext by converting each word (in ciphertext) back to its original hex character.
+        decoded_hex = "".join(
+            hex_map_reverse[word[0].upper()] for word in ciphertext.split() if word
+        )
+        
+        # Convert the decoded hex string back to the original plaintext.
+        return self._hex_to_string(decoded_hex)
 
 
 def main():    
-    sc = SemanticCipher()
-    ciphertext = sc.encode("All in all is all we are", context="Space", key="")
+    sc = SemanticCipher(model_name="Qwen/Qwen2.5-1.5B-Instruct", from_pretrained=True)
+    ciphertext = sc.encode("0xdeadbeef 123!@#", context="Space", key="xyz")
     logging.info(f"Ciphertxt: {ciphertext}")
     plaintext = sc.decode(ciphertext)
     logging.info(f"Plaintext: {plaintext}")
