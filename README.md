@@ -3,6 +3,18 @@
 # Semantic Cipher
 Encrypt arbitrary data into semantic text
 
+## Index
+1. [How it Works](#how-it-works)
+   - [Encryption](#encryption)
+     - [Step 1: Convert Plaintext to Hexadecimal Format](#step-1-convert-plaintext-to-hexadecimal-format)
+     - [Step 2: Create Hexadecimal Mapping](#step-2-create-hexadecimal-mapping)
+     - [Step 3: Map Each Corresponding Hexadecimal Value to English Word](#step-3-map-each-corresponding-hexadecimal-value-to-english-word)
+   - [Decryption](#decryption)
+     - [Step 1: Parse the Ciphertext and Extract First Character of Each Word](#step-1-parse-the-ciphertext-and-extract-first-character-of-each-word)
+     - [Step 2: Map the Hexadecimal Characters to Their Corresponding Values](#step-2-map-the-hexadecimal-characters-to-their-corresponding-values)
+2. [Encrypt Using OpenAI Models](#encrypt-using-openai-models)
+3. [Encrypt Using Pretrained SLM](#encrypt-using-pretrained-slm)
+
 ## How it Works
 ### Encryption
 **Step 1.  Convert Plaintex to Hexadecimal Format**
