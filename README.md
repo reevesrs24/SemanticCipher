@@ -108,11 +108,11 @@ Encrypt arbitrary data into semantic text
   - **and** → Value: `A` → Hex: `0x6`
   - **willpower** → Value: `W` → Hex: `0xF`
 
-  Output: `0x48656C6C6F21` 
+  Output: `0x48656C6C6F` 
 
 **Step 2.  Map the Hexadecimal Characters to Their Correpsonding Values**
 
-* Input: `0x48656C6C6F21` and `Key=""`  
+* Input: `0x48656C6C6F` and `Key=""`  
     - **Hex: `0x48`** → Character: `H`
     - **Hex: `0x65`** → Character: `e`
     - **Hex: `0x6C`** → Character: `l`
