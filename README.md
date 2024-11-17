@@ -26,20 +26,54 @@ Encrypt arbitrary data into semantic text
         - **l** → ASCII: 108 → Hex: `0x6C`
         - **o** → ASCII: 111 → Hex: `0x6F`
 
-       Output: `0x48656C6C6F21`  
+       Output: `0x48656C6C6F`  
 
 **Step 2.  Create Hexadecimal Mapping**
 
 * Each of the 16 hexadecimal characters are mapped to one of the 16 highest frequency English characters.  These characters are `E`, `T`, `A`, `O`, `I`, `N`, `S`. `H`, `R`, `D`, `L`, `C`, `U`, `M`, `W` and `F`.  
 * If a `key` is a chosen the hex mapping will be "scrambled" in such a way that only the key can be used to restructure the hex mapping to retrieve the semantically encrypted text.
-* Hex mapping when `key=""`
-```python
-self.hex_map = {'0': 'U', '1': 'H', '2': 'T', '3': 'I', '4': 'L', '5': 'R', '6': 'A', '7': 'F', '8': 'E', '9': 'N', 'A': 'M', 'B': 'C', 'C': 'S', 'D': 'O', 'E': 'D', 'F': 'W'}
-```
+* Hex mapping when `key=""`  
+
+        | Hex | Character |
+        |-----|-----------|
+        | 0   | U         |
+        | 1   | H         |
+        | 2   | T         |
+        | 3   | I         |
+        | 4   | L         |
+        | 5   | R         |
+        | 6   | A         |
+        | 7   | F         |
+        | 8   | E         |
+        | 9   | N         |
+        | A   | M         |
+        | B   | C         |
+        | C   | S         |
+        | D   | O         |
+        | E   | D         |
+        | F   | W         |
+
 * Hex mapping when `key="abc"`
-```python
-self.hex_map = {'0': 'L', '1': 'T', '2': 'H', '3': 'D', '4': 'S', '5': 'F', '6': 'R', '7': 'O', '8': 'E', '9': 'I', 'A': 'A', 'B': 'M', 'C': 'U', 'D': 'N', 'E': 'C', 'F': 'W'}
-```
+
+        | Hex | Character |
+        |-----|-----------|
+        | 0   | L         |
+        | 1   | T         |
+        | 2   | H         |
+        | 3   | D         |
+        | 4   | S         |
+        | 5   | F         |
+        | 6   | R         |
+        | 7   | O         |
+        | 8   | E         |
+        | 9   | I         |
+        | A   | A         |
+        | B   | M         |
+        | C   | U         |
+        | D   | N         |
+        | E   | C         |
+        | F   | W         |
+
 
 **Step 3.  Map Each Corresponding Hexadecimal Value to English Word**
 
