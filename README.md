@@ -18,8 +18,8 @@ There are `16!` total permutations, given that the encoding list contains all he
 
 ```python
 sc = SemanticCipher(model_name="gpt-4o", key="xyz")
-ciphertext = sc.encrypt(plaintext="0xdeadbeef", context="Space")
 
+ciphertext = sc.encrypt(plaintext="0xdeadbeef", context="Space")
 print(f"Ciphertext: {ciphertext}")
 
 plaintext = sc.decrypt(ciphertext=ciphertext)
