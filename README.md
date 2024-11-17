@@ -4,16 +4,17 @@
 Encrypt arbitrary data into semantic text
 
 ## Index
-1. [How it Works](#how-it-works)
-   - [Encryption](#encryption)
-     - [Step 1: Convert Plaintext to Hexadecimal Format](#step-1-convert-plaintext-to-hexadecimal-format)
-     - [Step 2: Create Hexadecimal Mapping](#step-2-create-hexadecimal-mapping)
-     - [Step 3: Map Each Corresponding Hexadecimal Value to English Word](#step-3-map-each-corresponding-hexadecimal-value-to-english-word)
-   - [Decryption](#decryption)
-     - [Step 1: Parse the Ciphertext and Extract First Character of Each Word](#step-1-parse-the-ciphertext-and-extract-first-character-of-each-word)
-     - [Step 2: Map the Hexadecimal Characters to Their Corresponding Values](#step-2-map-the-hexadecimal-characters-to-their-corresponding-values)
-2. [Encrypt Using OpenAI Models](#encrypt-using-openai-models)
-3. [Encrypt Using Pretrained SLM](#encrypt-using-pretrained-slm)
+1. [How it Works](#how-it-works)  
+    1.1. [Encryption](#encryption)  
+        1.1.1. [Step 1. Convert Plaintext to Hexadecimal Format](#step-1-convert-plaintext-to-hexadecimal-format)  
+        1.1.2. [Step 2. Create Hexadecimal Mapping](#step-2-create-hexadecimal-mapping)  
+        1.1.3. [Step 3. Map Each Corresponding Hexadecimal Value to English Word](#step-3-map-each-corresponding-hexadecimal-value-to-english-word)  
+    1.2. [Decryption](#decryption)  
+        1.2.1. [Step 1. Parse the Ciphertext and Extract First Character of Each Word](#step-1-parse-the-ciphertext-and-extract-first-character-of-each-word)  
+        1.2.2. [Step 2. Map the Hexadecimal Characters to Their Corresponding Values](#step-2-map-the-hexadecimal-characters-to-their-corresponding-values)  
+2. [Examples](#examples)  
+    2.1. [Encrypt Using OpenAI Models](#encrypt-using-openai-models)  
+    2.2. [Encrypt Using Pretrained SLM](#encrypt-using-pretrained-slm)
 
 ## How it Works
 ### Encryption
@@ -121,7 +122,9 @@ Encrypt arbitrary data into semantic text
 
     Output: `Hello`
 
-## Encrypt Using OpenAI Models
+## Examples
+
+### Encrypt Using OpenAI Models
 
 To use OpenAI models, simply add your OpenAI API key to the `.env` file.
 
@@ -144,14 +147,14 @@ plaintext = sc.decrypt(ciphertext=ciphertext)
 print(f"Plaintext: {plaintext}")
 ```
 
-### Output:
+#### Output:
 ```bash
 Ciphertext: Launching every day, fearless astronauts will always conquer all universe. Astronauts wearing advanced technology aboard craft achieve cosmic adventures always
 
 Plaintext: 0xdeadbeef
 ```
 
-## Encrypt Using Pretrained SLM
+### Encrypt Using Pretrained SLM
 
 > [!IMPORTANT]  
 > - Using SLMs typically output text that is nonsensical. Next token prediction is strictly used and does not leverage the reasoning capabilities of larger models to formulate outputs.  Added as an experiment and as a template for future experiments.
@@ -166,7 +169,7 @@ plaintext = sc.decrypt(ciphertext=ciphertext)
 print(f"Plaintext: {plaintext}")
 ```
 
-### Output:
+#### Output:
 ```bash
 Ciphertext: Lily E. Duffin F. A. W. A. C. A. U. A. W. A. T. A. C. A. C. A. A.
 
