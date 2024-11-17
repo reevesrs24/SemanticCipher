@@ -141,4 +141,7 @@ Plaintext: 0xdeadbeef
 
 > [!TIP]  
 > - Use `requirements.txt` to install all necessary packages
+```bash
+pip install -r requirements.txt
+```
 > - Python version `3.10.15` was used in testing
