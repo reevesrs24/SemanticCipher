@@ -34,45 +34,45 @@ Encrypt arbitrary data into semantic text
 * If a `key` is a chosen the hex mapping will be "scrambled" in such a way that only the key can be used to restructure the hex mapping to retrieve the semantically encrypted text.
 * Hex mapping when `key=""`  
 
-        | Hex | Character |
-        |-----|-----------|
-        | 0   | U         |
-        | 1   | H         |
-        | 2   | T         |
-        | 3   | I         |
-        | 4   | L         |
-        | 5   | R         |
-        | 6   | A         |
-        | 7   | F         |
-        | 8   | E         |
-        | 9   | N         |
-        | A   | M         |
-        | B   | C         |
-        | C   | S         |
-        | D   | O         |
-        | E   | D         |
-        | F   | W         |
+| Hex | Character |
+|-----|-----------|
+| 0   | U         |
+| 1   | H         |
+| 2   | T         |
+| 3   | I         |
+| 4   | L         |
+| 5   | R         |
+| 6   | A         |
+| 7   | F         |
+| 8   | E         |
+| 9   | N         |
+| A   | M         |
+| B   | C         |
+| C   | S         |
+| D   | O         |
+| E   | D         |
+| F   | W         |
 
 * Hex mapping when `key="abc"`
 
-        | Hex | Character |
-        |-----|-----------|
-        | 0   | L         |
-        | 1   | T         |
-        | 2   | H         |
-        | 3   | D         |
-        | 4   | S         |
-        | 5   | F         |
-        | 6   | R         |
-        | 7   | O         |
-        | 8   | E         |
-        | 9   | I         |
-        | A   | A         |
-        | B   | M         |
-        | C   | U         |
-        | D   | N         |
-        | E   | C         |
-        | F   | W         |
+| Hex | Character |
+|-----|-----------|
+| 0   | L         |
+| 1   | T         |
+| 2   | H         |
+| 3   | D         |
+| 4   | S         |
+| 5   | F         |
+| 6   | R         |
+| 7   | O         |
+| 8   | E         |
+| 9   | I         |
+| A   | A         |
+| B   | M         |
+| C   | U         |
+| D   | N         |
+| E   | C         |
+| F   | W         |
 
 
 **Step 3.  Map Each Corresponding Hexadecimal Value to English Word**
