@@ -6,15 +6,16 @@ Encrypt arbitrary data into semantic text
 ## Index
 1. [How it Works](#how-it-works)  
     1.1. [Encryption](#encryption)  
-        1.1.1. [Step 1. Convert Plaintext to Hexadecimal Format](#step-1-convert-plaintext-to-hexadecimal-format)  
-        1.1.2. [Step 2. Create Hexadecimal Mapping](#step-2-create-hexadecimal-mapping)  
-        1.1.3. [Step 3. Map Each Corresponding Hexadecimal Value to English Word](#step-3-map-each-corresponding-hexadecimal-value-to-english-word)  
+         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.1. [Step 1. Convert Plaintext to Hexadecimal Format](#step-1-convert-plaintext-to-hexadecimal-format)  
+         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.2. [Step 2. Create Hexadecimal Mapping](#step-2-create-hexadecimal-mapping)  
+         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.3. [Step 3. Map Each Corresponding Hexadecimal Value to English Word](#step-3-map-each-corresponding-hexadecimal-value-to-english-word)  
     1.2. [Decryption](#decryption)  
-        1.2.1. [Step 1. Parse the Ciphertext and Extract First Character of Each Word](#step-1-parse-the-ciphertext-and-extract-first-character-of-each-word)  
-        1.2.2. [Step 2. Map the Hexadecimal Characters to Their Corresponding Values](#step-2-map-the-hexadecimal-characters-to-their-corresponding-values)  
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.1. [Step 1. Parse the Ciphertext and Extract First Character of Each Word](#step-1-parse-the-ciphertext-and-extract-first-character-of-each-word)  
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.2. [Step 2. Map the Hexadecimal Characters to Their Corresponding Values](#step-2-map-the-hexadecimal-characters-to-their-corresponding-values)  
 2. [Examples](#examples)  
     2.1. [Encrypt Using OpenAI Models](#encrypt-using-openai-models)  
     2.2. [Encrypt Using Pretrained SLM](#encrypt-using-pretrained-slm)
+
 
 ## How it Works
 ### Encryption
