@@ -112,7 +112,7 @@ Encrypt arbitrary data into semantic text
 
   Output: `0x48656C6C6F` 
 
-**Step 2.  Map the Hexadecimal Characters to Their Correpsonding Values**
+**Step 2.  Map the Hexadecimal Characters to Their Corresponding Values**
 
 * Input: `0x48656C6C6F` and `Key=""`  
     - **Hex: `0x48`** → Character: `H`
