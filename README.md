@@ -1,7 +1,12 @@
 <div align="center"><img src="assets/semantic_cipher.jpeg" width="350"/></div>
   
 # Semantic Cipher
-Encrypt arbitrary data into semantic text
+Encode arbitrary data into semantic text
+
+```bash
+Plaintext: 0xdeadbeef
+Encoded text: Launching every day, fearless astronauts will always conquer all universe. Astronauts wearing advanced technology aboard craft achieve cosmic adventures always
+```
 
 ## Index
 1. [How it Works](#how-it-works)  
